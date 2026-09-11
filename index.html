@@ -1,0 +1,2764 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>GEOÁFRICA — Desafio de Geografia</title>
+
+<link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+
+<style>
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background:
+        radial-gradient(circle at top, #164c35 0%, #071a12 45%, #030907 100%);
+    color: #fff;
+    height: auto;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* =========================
+   CONTAINER PRINCIPAL
+========================= */
+
+.game-container {
+    width: min(1100px, 96%);
+    min-height: 100vh;
+    margin: 0 auto;
+    padding: 10px 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* A tela inicial e a tela final podem rolar internamente
+   se o conteúdo não couber, sem afetar o resto da página. */
+.start-screen,
+.final-screen {
+    overflow-y: auto;
+}
+
+/* =========================
+   CABEÇALHO
+========================= */
+
+.header {
+    background: rgba(10, 30, 21, 0.94);
+    border: 1px solid rgba(255, 215, 80, 0.25);
+    border-radius: 14px;
+    padding: 10px 20px;
+    margin-bottom: 10px;
+    box-shadow: 0 15px 40px rgba(0,0,0,.35);
+    flex-shrink: 0;
+}
+
+.logo {
+    text-align: center;
+    font-size: clamp(18px, 3vw, 28px);
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: #f4c542;
+}
+
+.subtitle {
+    text-align: center;
+    color: #cbd8d0;
+    margin-top: 3px;
+    font-size: 12px;
+}
+
+.dev-credit {
+    text-align: center;
+    color: #9db1a5;
+    margin-top: 4px;
+    font-size: 11px;
+    font-style: italic;
+}
+
+/* =========================
+   STATUS
+========================= */
+
+.status-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+}
+
+.status-box {
+    background: rgba(11, 34, 24, .94);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 12px;
+    padding: 7px;
+    text-align: center;
+}
+
+.status-label {
+    display: block;
+    color: #9db1a5;
+    font-size: 10px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+
+.status-value {
+    font-size: 16px;
+    font-weight: 800;
+}
+
+#timer {
+    color: #f4c542;
+}
+
+#score {
+    color: #71df9b;
+}
+
+#lives {
+    font-size: 17px;
+    letter-spacing: 1px;
+}
+
+/* =========================
+   BARRA DE PROGRESSO
+========================= */
+
+.progress-container {
+    background: #14261e;
+    height: 6px;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #f4c542, #ffe889);
+    transition: width .25s linear;
+}
+
+/* =========================
+   CARTÃO DA QUESTÃO
+========================= */
+
+.question-card {
+    background: rgba(7, 24, 16, .96);
+    border: 1px solid rgba(255,255,255,.11);
+    border-radius: 18px;
+    padding: 14px 18px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.38);
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.question-number {
+    color: #f4c542;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+    flex-shrink: 0;
+}
+
+.question-type {
+    display: inline-block;
+    padding: 4px 9px;
+    border-radius: 20px;
+    background: rgba(244,197,66,.12);
+    color: #f4c542;
+    font-size: 10px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    flex-shrink: 0;
+}
+
+.question-text {
+    font-size: clamp(16px, 2.2vw, 21px);
+    line-height: 1.3;
+    font-weight: 700;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+}
+
+/* =========================
+   ALTERNATIVAS
+========================= */
+
+.answers {
+    display: grid;
+    gap: 7px;
+    flex-shrink: 0;
+}
+
+.answer {
+    width: 100%;
+    padding: 9px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.045);
+    color: white;
+    text-align: left;
+    cursor: pointer;
+    font-size: 13.5px;
+    transition: .2s;
+}
+
+.answer:hover {
+    background: rgba(244,197,66,.12);
+    border-color: rgba(244,197,66,.5);
+    transform: translateX(3px);
+}
+
+.answer.correct {
+    background: rgba(50,180,100,.2);
+    border-color: #55d889;
+}
+
+.answer.wrong {
+    background: rgba(220,60,60,.2);
+    border-color: #ff6969;
+}
+
+.answer.disabled {
+    pointer-events: none;
+}
+
+.letter {
+    display: inline-flex;
+    width: 22px;
+    height: 22px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255,255,255,.1);
+    margin-right: 8px;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+/* =========================
+   MAPA
+========================= */
+
+.map-wrapper {
+    width: 100%;
+    max-width: 950px;
+    margin: 4px auto 10px;
+    flex-shrink: 1;
+    min-height: 0;
+}
+
+.map-container {
+    width: 100%;
+    height: min(38vh, 300px);
+    min-height: 160px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 2px solid rgba(255,255,255,.14);
+    box-shadow: 0 12px 30px rgba(0,0,0,.35);
+}
+
+/*
+   Importante:
+   O mapa não ocupa a tela inteira e
+   não captura o scroll da página.
+*/
+
+#map {
+    width: 100%;
+    height: 100%;
+}
+
+/* Cursor para indicar que a área pode ser clicada */
+.leaflet-container {
+    cursor: crosshair;
+}
+
+/* =========================
+   FEEDBACK
+========================= */
+
+.feedback {
+    margin-top: 8px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    background: rgba(255,255,255,.045);
+    display: none;
+    line-height: 1.35;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.feedback.show {
+    display: block;
+}
+
+.feedback.correct-feedback {
+    border: 1px solid rgba(85,216,137,.4);
+    color: #8ff0b4;
+}
+
+.feedback.wrong-feedback {
+    border: 1px solid rgba(255,105,105,.4);
+    color: #ffaaa8;
+}
+
+/* =========================
+   PONTOS DA QUESTÃO
+========================= */
+
+.question-points {
+    display: none;
+    margin-top: 6px;
+    font-size: 15px;
+    font-weight: bold;
+    color: #f4c542;
+    flex-shrink: 0;
+}
+
+.question-points.show {
+    display: block;
+}
+
+/* =========================
+   BOTÃO PRÓXIMA
+========================= */
+
+.next-button-container {
+    margin-top: 8px;
+    position: relative;
+    z-index: 1000;
+    flex-shrink: 0;
+}
+
+.next-button {
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    padding: 11px;
+    background: linear-gradient(135deg, #e5b52f, #f4c542);
+    color: #111;
+    font-weight: 900;
+    font-size: 14px;
+    cursor: pointer;
+    display: none;
+    transition: .2s;
+}
+
+.next-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(244,197,66,.25);
+}
+
+.next-button.show {
+    display: block;
+}
+
+/* =========================
+   TELA FINAL
+========================= */
+
+.final-screen {
+    display: none;
+    text-align: center;
+    background: rgba(7,24,16,.97);
+    border: 1px solid rgba(244,197,66,.25);
+    border-radius: 20px;
+    padding: 25px 25px;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.final-screen.show {
+    display: flex;
+    flex-direction: column;
+}
+
+.final-title {
+    font-size: clamp(24px, 4vw, 30px);
+    color: #f4c542;
+    margin-bottom: 12px;
+}
+
+.final-score {
+    font-size: 44px;
+    font-weight: 900;
+    color: #71df9b;
+    margin: 8px 0;
+}
+
+.final-message {
+    color: #cbd8d0;
+    line-height: 1.6;
+    margin-bottom: 25px;
+}
+
+.restart-button {
+    border: none;
+    padding: 15px 30px;
+    border-radius: 12px;
+    background: #f4c542;
+    color: #111;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+/* =========================
+   RANKING
+========================= */
+
+.ranking {
+    margin-top: 25px;
+    text-align: left;
+}
+
+.ranking h3 {
+    color: #f4c542;
+    margin-bottom: 10px;
+}
+
+.ranking ol {
+    padding-left: 22px;
+}
+
+.ranking li {
+    padding: 6px 0;
+    color: #d9e2dc;
+}
+
+/* =========================
+   RESPONSIVIDADE
+========================= */
+
+@media (max-width: 768px) {
+
+    .game-container {
+        width: 96%;
+    }
+
+    .header {
+        padding: 8px 14px;
+    }
+
+    .status-bar {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 5px;
+    }
+
+    .status-box {
+        padding: 5px;
+    }
+
+    .status-value {
+        font-size: 13px;
+    }
+
+    .question-card {
+        padding: 10px 12px;
+    }
+
+    .map-container {
+        height: min(30vh, 230px);
+        min-height: 140px;
+        border-radius: 12px;
+    }
+
+    .question-text {
+        font-size: 15px;
+    }
+
+    .answer {
+        padding: 8px 10px;
+        font-size: 12.5px;
+    }
+
+}
+
+/* Telas muito baixas (ex.: celular em paisagem):
+   reduz ainda mais o mapa e o cabeçalho. */
+@media (max-height: 620px) {
+
+    .subtitle {
+        display: none;
+    }
+
+    .header {
+        padding: 6px 16px;
+    }
+
+    .map-container {
+        height: min(26vh, 190px);
+        min-height: 120px;
+    }
+
+}
+
+/* =========================
+   TELA DE INÍCIO
+========================= */
+
+.start-screen {
+    background: rgba(7,24,16,.97);
+    border-radius: 20px;
+    padding: 25px 25px;
+    text-align: center;
+    border: 1px solid rgba(244,197,66,.25);
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.start-screen h1 {
+    color: #f4c542;
+    font-size: clamp(22px, 4vw, 32px);
+    margin-bottom: 10px;
+}
+
+.start-screen p {
+    color: #cbd8d0;
+    line-height: 1.6;
+    max-width: 700px;
+    margin: auto;
+    font-size: 14px;
+}
+
+.start-rules {
+    margin: 16px auto;
+    max-width: 600px;
+    text-align: left;
+    background: rgba(255,255,255,.04);
+    padding: 14px 18px;
+    border-radius: 13px;
+    font-size: 14px;
+}
+
+.start-rules div {
+    padding: 5px 0;
+}
+
+.player-name-box {
+    margin: 18px auto 4px;
+    max-width: 340px;
+    text-align: left;
+}
+
+.player-name-box label {
+    display: block;
+    font-size: 13px;
+    color: #cbd8d0;
+    margin-bottom: 6px;
+}
+
+.player-name-box input {
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(244,197,66,.4);
+    background: rgba(255,255,255,.06);
+    color: #fff;
+    font-size: 15px;
+    outline: none;
+}
+
+.player-name-box input:focus {
+    border-color: #f4c542;
+    box-shadow: 0 0 0 3px rgba(244,197,66,.18);
+}
+
+.player-name-box.error input {
+    border-color: #ff6969;
+}
+
+.player-name-box .name-error {
+    display: none;
+    color: #ffaaa8;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.player-name-box.error .name-error {
+    display: block;
+}
+
+.start-button {
+    border: none;
+    border-radius: 13px;
+    padding: 14px 32px;
+    background: #f4c542;
+    color: #111;
+    font-size: 16px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.hidden {
+    display: none !important;
+}
+
+#gameScreen {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.ranking {
+    margin-top: 14px;
+    text-align: left;
+    overflow-y: auto;
+}
+
+/* =========================
+   MODAL DE COMPRA DE VIDAS
+========================= */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 10, 6, .82);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 16px;
+}
+
+.modal-overlay.hidden {
+    display: none !important;
+}
+
+.modal-box {
+    background: rgba(7,24,16,.98);
+    border: 1px solid rgba(244,197,66,.35);
+    border-radius: 18px;
+    padding: 22px 24px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,.5);
+}
+
+.modal-title {
+    font-size: 19px;
+    font-weight: 900;
+    color: #f4c542;
+    margin: 10px 0 10px;
+}
+
+.modal-text {
+    color: #cbd8d0;
+    font-size: 13.5px;
+    line-height: 1.5;
+    margin-bottom: 16px;
+}
+
+.modal-options {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.modal-buy-button {
+    border: none;
+    border-radius: 12px;
+    padding: 12px;
+    background: linear-gradient(135deg, #e5b52f, #f4c542);
+    color: #111;
+    font-weight: 900;
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.modal-buy-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(244,197,66,.25);
+}
+
+.modal-buy-button:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.modal-decline-button {
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 12px;
+    padding: 11px;
+    background: transparent;
+    color: #cbd8d0;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    margin-top: 4px;
+}
+
+.modal-decline-button:hover {
+    background: rgba(255,255,255,.06);
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="game-container">
+
+    <header class="header">
+        <div class="logo">🌍 GEOÁFRICA</div>
+        <div class="dev-credit">Desenvolvido por Jessé Block</div>
+        <div class="subtitle">
+            Desafio de Geografia — Regionalização e Geografia do Continente Africano
+        </div>
+    </header>
+
+
+    <!-- =========================
+         TELA INICIAL
+    ========================== -->
+
+    <section id="startScreen" class="start-screen">
+
+        <h1>DESAFIO GEOÁFRICA</h1>
+
+        <p>
+            Teste seus conhecimentos sobre a regionalização da África,
+            seus limites físicos, oceanos, mares, cabos, golfos,
+            estreitos e principais áreas geográficas.
+        </p>
+
+        <div class="start-rules">
+
+            <div>❤️ <strong>10 vidas</strong></div>
+
+            <div>⏱️ <strong>60 segundos</strong> para cada questão</div>
+
+            <div>🎯 Até <strong>300 pontos</strong> por questão</div>
+
+            <div>⚡ Quanto mais rápido responder, maior será a pontuação</div>
+
+            <div>🛰️ Algumas questões exigem localizar o elemento diretamente no mapa</div>
+
+            <div>🔤 Questões teóricas possuem cinco alternativas: A, B, C, D e E</div>
+
+            <div>💰 Ficou sem vidas? Você pode comprar mais com seus pontos (1 vida = 3000 pts | 2 vidas = 4000 pts)</div>
+
+        </div>
+
+        <div class="player-name-box" id="playerNameBox">
+            <label for="playerNameInput">Digite seu nome para começar:</label>
+            <input
+                type="text"
+                id="playerNameInput"
+                maxlength="24"
+                placeholder="Seu nome"
+                autocomplete="off">
+            <div class="name-error">Por favor, digite seu nome antes de começar.</div>
+        </div>
+
+        <button class="start-button" onclick="startGame()">
+            COMEÇAR DESAFIO
+        </button>
+
+    </section>
+
+
+    <!-- =========================
+         JOGO
+    ========================== -->
+
+    <section id="gameScreen" class="hidden">
+
+        <div class="status-bar">
+
+            <div class="status-box">
+                <span class="status-label">Questão</span>
+                <span class="status-value" id="questionCounter">
+                    1 / 28
+                </span>
+            </div>
+
+            <div class="status-box">
+                <span class="status-label">Tempo</span>
+                <span class="status-value" id="timer">
+                    60
+                </span>
+            </div>
+
+            <div class="status-box">
+                <span class="status-label">Pontuação</span>
+                <span class="status-value" id="score">
+                    0
+                </span>
+            </div>
+
+            <div class="status-box">
+                <span class="status-label">Vidas</span>
+                <span class="status-value" id="lives">
+                    ❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️
+                </span>
+            </div>
+
+        </div>
+
+
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+
+        <div class="question-card">
+
+            <div class="question-number" id="questionNumber">
+                QUESTÃO 01
+            </div>
+
+            <div class="question-type" id="questionType">
+                MÚLTIPLA ESCOLHA
+            </div>
+
+            <div class="question-text" id="questionText"></div>
+
+
+            <!-- MAPA -->
+
+            <div id="mapArea" class="map-wrapper hidden">
+
+                <div class="map-container">
+                    <div id="map"></div>
+                </div>
+
+            </div>
+
+
+            <!-- ALTERNATIVAS -->
+
+            <div id="answers" class="answers"></div>
+
+
+            <div
+                id="feedback"
+                class="feedback">
+            </div>
+
+            <div
+                id="questionPoints"
+                class="question-points">
+            </div>
+
+            <div class="next-button-container">
+
+                <button
+                    id="nextButton"
+                    class="next-button"
+                    onclick="nextQuestion()">
+
+                    PRÓXIMA QUESTÃO →
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         FINAL
+    ========================== -->
+
+    <section id="finalScreen" class="final-screen">
+
+        <div class="final-title">
+            🏆 DESAFIO CONCLUÍDO!
+        </div>
+
+        <div id="finalPlayerName" style="color:#f4c542; font-weight:700; margin-bottom:6px;"></div>
+
+        <div>
+            Sua pontuação:
+        </div>
+
+        <div class="final-score" id="finalScore">
+            0
+        </div>
+
+        <div class="final-message" id="finalMessage"></div>
+
+        <button
+            class="restart-button"
+            onclick="restartGame()">
+
+            JOGAR NOVAMENTE
+
+        </button>
+
+        <div class="ranking">
+
+            <h3>🏅 RANKING LOCAL</h3>
+
+            <ol id="rankingList"></ol>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         MODAL DE COMPRA DE VIDAS
+    ========================== -->
+
+    <div id="lifePurchaseOverlay" class="modal-overlay hidden">
+
+        <div class="modal-box">
+
+            <div class="logo" style="font-size:20px;">🌍 GEOÁFRICA</div>
+            <div class="dev-credit">Desenvolvido por Jessé Block</div>
+
+            <div class="modal-title">💔 Suas vidas acabaram!</div>
+
+            <div class="modal-text">
+                Você ainda tem <strong id="modalScoreDisplay">0</strong> pontos.
+                Deseja usar parte da sua pontuação para comprar mais vidas
+                e continuar o desafio?
+            </div>
+
+            <div class="modal-options">
+
+                <button
+                    id="buyOneLifeBtn"
+                    class="modal-buy-button"
+                    onclick="buyLives(1)">
+                    Comprar 1 vida — 3000 pontos
+                </button>
+
+                <button
+                    id="buyTwoLivesBtn"
+                    class="modal-buy-button"
+                    onclick="buyLives(2)">
+                    Comprar 2 vidas — 4000 pontos
+                </button>
+
+                <button
+                    class="modal-decline-button"
+                    onclick="declineLifePurchase()">
+                    Não, encerrar o desafio
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+/* ============================================================
+   CONFIGURAÇÕES
+============================================================ */
+
+const TOTAL_LIVES = 10;
+
+const QUESTION_TIME = 60;
+
+const MAX_POINTS = 300;
+
+
+/* ============================================================
+   SONS (gerados via Web Audio API, sem arquivos externos)
+============================================================ */
+
+let audioCtx = null;
+
+function getAudioCtx() {
+
+    if (!audioCtx) {
+
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    }
+
+    if (audioCtx.state === "suspended") {
+
+        audioCtx.resume();
+
+    }
+
+    return audioCtx;
+
+}
+
+/* Toca uma nota simples num determinado instante */
+function playTone(ctx, freq, startTime, duration, type, gainValue) {
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = type || "sine";
+    osc.frequency.setValueAtTime(freq, startTime);
+
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.exponentialRampToValueAtTime(gainValue || 0.25, startTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(startTime);
+    osc.stop(startTime + duration + 0.05);
+
+}
+
+/* Som de vitória: pequena sequência ascendente de notas */
+function playVictorySound() {
+
+    try {
+
+        const ctx = getAudioCtx();
+        const now = ctx.currentTime;
+
+        const notes = [523.25, 659.25, 783.99, 1046.5]; // Dó, Mi, Sol, Dó (agudo)
+
+        notes.forEach((freq, i) => {
+
+            playTone(ctx, freq, now + i * 0.09, 0.22, "triangle", 0.22);
+
+        });
+
+    } catch (e) {
+
+        /* Ambiente sem suporte a áudio: falha silenciosamente */
+
+    }
+
+}
+
+/* Som de buzina: dois toques graves e ásperos, tipo "erro" */
+function playWrongSound() {
+
+    try {
+
+        const ctx = getAudioCtx();
+        const now = ctx.currentTime;
+
+        [0, 0.22].forEach(offset => {
+
+            playTone(ctx, 150, now + offset, 0.2, "sawtooth", 0.28);
+            playTone(ctx, 100, now + offset, 0.2, "square", 0.12);
+
+        });
+
+    } catch (e) {
+
+        /* Ambiente sem suporte a áudio: falha silenciosamente */
+
+    }
+
+}
+
+
+/* ============================================================
+   ESTADO DO JOGO
+============================================================ */
+
+let lives = TOTAL_LIVES;
+
+let score = 0;
+
+let currentQuestion = 0;
+
+let playerName = "";
+
+let answered = false;
+
+let timerInterval = null;
+
+let questionStartTime = 0;
+
+let map = null;
+
+let hotspotLayers = [];
+
+
+/* ============================================================
+   QUESTÕES
+============================================================ */
+
+const questions = [
+
+/* ============================================================
+   QUESTÕES DE MAPA
+============================================================ */
+
+{
+    type: "map",
+    text: "Clique no mapa sobre o oceano que banha a costa oeste do continente africano.",
+    target: "atlantic",
+    explanation: "O Oceano Atlântico banha a costa ocidental da África."
+},
+
+{
+    type: "map",
+    text: "Clique no mapa sobre o oceano que banha a costa oriental e sudeste da África.",
+    target: "indian",
+    explanation: "O Oceano Índico banha a costa oriental e sudeste do continente africano."
+},
+
+{
+    type: "map",
+    text: "Clique no mapa sobre o mar localizado ao norte da África.",
+    target: "mediterranean",
+    explanation: "O Mar Mediterrâneo está localizado ao norte da África e separa o continente africano da Europa."
+},
+
+{
+    type: "map",
+    text: "Clique no mapa sobre o Mar Vermelho.",
+    target: "redsea",
+    explanation: "O Mar Vermelho está localizado entre o nordeste da África e a Península Arábica."
+},
+
+{
+    type: "map",
+    text: "Clique no mapa sobre o Estreito de Gibraltar.",
+    target: "gibraltar",
+    explanation: "O Estreito de Gibraltar separa o norte da África da Europa e conecta o Mediterrâneo ao Atlântico."
+},
+
+{
+    type: "map",
+    text: "Clique no mapa sobre o Canal de Suez.",
+    target: "suez",
+    explanation: "O Canal de Suez, no Egito, conecta o Mar Mediterrâneo ao Mar Vermelho e é uma referência para a separação convencional entre África e Ásia."
+},
+
+{
+    type: "map",
+    text: "Clique no mapa sobre o Golfo de Áden.",
+    target: "aden",
+    explanation: "O Golfo de Áden está localizado entre o Chifre da África e a Península Arábica."
+},
+
+{
+    type: "map",
+    text: "Clique no mapa sobre o Chifre da África.",
+    target: "horn",
+    explanation: "O Chifre da África é a grande projeção do nordeste do continente, envolvendo principalmente Somália, Etiópia, Eritreia e Djibuti."
+},
+
+{
+    type: "map",
+    text: "Clique no mapa sobre o Golfo da Guiné.",
+    target: "guinea",
+    explanation: "O Golfo da Guiné está localizado na costa ocidental da África, no Atlântico."
+},
+
+{
+    type: "map",
+    text: "Clique no mapa sobre o Canal de Moçambique.",
+    target: "mozambique",
+    explanation: "O Canal de Moçambique está entre Madagascar e a costa sudeste do continente africano."
+},
+
+{
+    type: "map",
+    text: "Clique no mapa sobre o Cabo da Boa Esperança.",
+    target: "goodhope",
+    explanation: "O Cabo da Boa Esperança está localizado no sudoeste da África do Sul."
+},
+
+{
+    type: "map",
+    text: "Clique no mapa sobre o ponto mais ao sul do continente africano.",
+    target: "agulhas",
+    explanation: "O Cabo das Agulhas é o ponto mais meridional do continente africano."
+},
+
+{
+    type: "map",
+    text: "Clique no mapa sobre a área conhecida como Magreb.",
+    target: "maghreb",
+    explanation: "O Magreb corresponde, de forma geral, ao noroeste da África, abrangendo países como Marrocos, Argélia e Tunísia."
+},
+
+{
+    type: "map",
+    text: "Clique no mapa sobre a área africana associada ao Maxerreque.",
+    target: "mashreq",
+    explanation: "O Maxerreque corresponde à porção oriental do mundo árabe. No continente africano, o Egito é seu principal representante."
+},
+
+{
+    type: "map",
+    text: "Clique no mapa sobre a faixa de transição localizada ao sul do Deserto do Saara.",
+    target: "sahel",
+    explanation: "O Sahel é uma faixa de transição semiárida localizada ao sul do Deserto do Saara."
+},
+
+
+/* ============================================================
+   QUESTÕES DE MÚLTIPLA ESCOLHA
+============================================================ */
+
+{
+    type: "mc",
+    text: "Em uma regionalização geográfica bastante utilizada, o continente africano é dividido em cinco grandes regiões. Qual alternativa apresenta corretamente essas regiões?",
+    options: [
+        "Setentrional, Ocidental, Central, Oriental e Meridional.",
+        "Mediterrânea, Atlântica, Índica, Saariana e Tropical.",
+        "Norte, Sul, Leste, Oeste e Centro-Sul.",
+        "Magreb, Maxerreque, Sahel, Congo e Kalahari.",
+        "Atlântica, Mediterrânea, Saariana, Subsaariana e Austral."
+    ],
+    answer: 0,
+    explanation: "Uma regionalização geográfica bastante utilizada divide a África em cinco grandes regiões: Setentrional, Ocidental, Central, Oriental e Meridional."
+},
+
+{
+    type: "mc",
+    text: "Qual dos países abaixo é geralmente classificado como pertencente à África Ocidental?",
+    options: [
+        "Nigéria, no Golfo da Guiné.",
+        "Quênia, na África Oriental.",
+        "Egito, no norte do continente.",
+        "África do Sul, no extremo sul.",
+        "Congo, na África Central."
+    ],
+    answer: 0,
+    explanation: "A Nigéria é um dos principais países da África Ocidental."
+},
+
+{
+    type: "mc",
+    text: "Qual conjunto apresenta apenas países geralmente associados à África Oriental?",
+    options: [
+        "Quênia, Etiópia e Somália.",
+        "Nigéria, Gana e Senegal.",
+        "Marrocos, Argélia e Tunísia.",
+        "Botsuana, Namíbia e Angola.",
+        "Camarões, Gabão e Congo."
+    ],
+    answer: 0,
+    explanation: "Quênia, Etiópia e Somália são exemplos de países da África Oriental."
+},
+
+{
+    type: "mc",
+    text: "Qual alternativa apresenta apenas países normalmente associados à África Setentrional?",
+    options: [
+        "Marrocos, Argélia, Tunísia e Líbia.",
+        "Nigéria, Gana, Senegal e Mali.",
+        "Quênia, Uganda, Tanzânia e Somália.",
+        "África do Sul, Namíbia e Botsuana.",
+        "Camarões, Gabão, Congo e Angola."
+    ],
+    answer: 0,
+    explanation: "Marrocos, Argélia, Tunísia e Líbia fazem parte da África Setentrional."
+},
+
+{
+    type: "mc",
+    text: "Qual conjunto apresenta exemplos de países da África Central?",
+    options: [
+        "Camarões, Gabão e Congo (RDC).",
+        "Egito, Líbia e Marrocos, no norte.",
+        "Quênia, Somália e Etiópia, no leste.",
+        "Nigéria, Senegal e Gana, no oeste.",
+        "Namíbia, Botsuana e Lesoto, no sul."
+    ],
+    answer: 0,
+    explanation: "Camarões, Gabão e República Democrática do Congo são exemplos de países da África Central."
+},
+
+{
+    type: "mc",
+    text: "Qual alternativa apresenta países associados à África Meridional?",
+    options: [
+        "África do Sul, Botsuana e Namíbia.",
+        "Egito, Sudão e Líbia, no norte.",
+        "Nigéria, Níger e Senegal, no oeste.",
+        "Etiópia, Quênia e Eritreia, no leste.",
+        "Camarões, Chade e Gabão, no centro."
+    ],
+    answer: 0,
+    explanation: "África do Sul, Botsuana e Namíbia são exemplos de países da África Meridional."
+},
+
+{
+    type: "mc",
+    text: "A divisão entre África do Norte e África Subsaariana utiliza como uma de suas principais referências naturais:",
+    options: [
+        "O Deserto do Saara, ao norte.",
+        "O Rio Nilo, no nordeste.",
+        "O Lago Vitória, no leste.",
+        "O Oceano Índico, a leste.",
+        "O Cabo da Boa Esperança, ao sul."
+    ],
+    answer: 0,
+    explanation: "O Deserto do Saara constitui uma importante referência espacial na divisão entre África do Norte e África Subsaariana."
+},
+
+{
+    type: "mc",
+    text: "Em termos geográficos, a expressão África Subsaariana refere-se, de modo geral, às áreas:",
+    options: [
+        "Localizadas ao sul do Deserto do Saara.",
+        "Localizadas exclusivamente na costa atlântica.",
+        "Localizadas ao norte do Mar Mediterrâneo.",
+        "Localizadas somente na África Oriental.",
+        "Localizadas exclusivamente no hemisfério sul."
+    ],
+    answer: 0,
+    explanation: "África Subsaariana é uma denominação utilizada para as áreas situadas, de maneira geral, ao sul do Deserto do Saara."
+},
+
+{
+    type: "mc",
+    text: "Sobre a divisão entre África do Norte e África Subsaariana, assinale a alternativa correta:",
+    options: [
+        "O Saara é referência espacial, mas a divisão envolve também história e cultura.",
+        "A divisão é determinada exclusivamente pelo fator climático regional.",
+        "Todos os países situados ao sul do Equador integram a região subsaariana.",
+        "O Rio Nilo estabelece, de forma oficial, essa divisão continental.",
+        "A divisão corresponde exatamente às cinco regiões geográficas oficiais."
+    ],
+    answer: 0,
+    explanation: "A divisão Norte/Subsaariana não é apenas física. O Saara é uma referência espacial importante, mas aspectos históricos, culturais e sociais também são considerados."
+},
+
+{
+    type: "mc",
+    text: "O Magreb corresponde, principalmente, a qual porção do continente africano?",
+    options: [
+        "Noroeste da África.",
+        "Sudeste da África.",
+        "Centro-sul da África.",
+        "Nordeste da África.",
+        "Extremo sul da África."
+    ],
+    answer: 0,
+    explanation: "O Magreb é uma denominação histórico-cultural relacionada principalmente ao noroeste africano."
+},
+
+{
+    type: "mc",
+    text: "Qual país africano está mais diretamente associado ao Maxerreque (Mashreq), considerando sua localização no mundo árabe?",
+    options: [
+        "Egito",
+        "Senegal",
+        "Namíbia",
+        "Gana",
+        "Botsuana"
+    ],
+    answer: 0,
+    explanation: "O Egito é o principal país africano associado ao Maxerreque, denominação utilizada para a porção oriental do mundo árabe."
+},
+
+{
+    type: "mc",
+    text: "Qual alternativa apresenta corretamente os principais oceanos que banham o continente africano?",
+    options: [
+        "Atlântico e Índico.",
+        "Pacífico e Ártico.",
+        "Atlântico e Pacífico.",
+        "Índico e Pacífico.",
+        "Ártico e Índico."
+    ],
+    answer: 0,
+    explanation: "A África é banhada principalmente pelo Oceano Atlântico, a oeste, e pelo Oceano Índico, a leste e sudeste."
+},
+
+{
+    type: "mc",
+    text: "O Estreito de Gibraltar possui grande importância geográfica porque:",
+    options: [
+        "Conecta o Mediterrâneo ao Atlântico e separa África da Europa.",
+        "Liga o Mar Vermelho ao Oceano Índico, no nordeste africano.",
+        "Separa a ilha de Madagascar do continente africano.",
+        "Liga o Oceano Atlântico ao Golfo da Guiné, na costa oeste.",
+        "Marca a fronteira entre o continente africano e a Antártida."
+    ],
+    answer: 0,
+    explanation: "O Estreito de Gibraltar conecta o Mediterrâneo ao Atlântico e está localizado entre o norte da África e o sul da Europa."
+},
+
+{
+    type: "mc",
+    text: "Qual afirmação sobre o Cabo da Boa Esperança está correta?",
+    options: [
+        "Fica no sudoeste da África do Sul, mas não é o ponto mais austral.",
+        "É o ponto mais ao sul de todo o continente africano.",
+        "Está localizado no território do Egito, no norte africano.",
+        "Está localizado na costa oriental da Somália, no leste.",
+        "É uma passagem artificial entre o Atlântico e o Índico."
+    ],
+    answer: 0,
+    explanation: "O Cabo da Boa Esperança fica no sudoeste da África do Sul. O ponto mais meridional do continente é o Cabo das Agulhas."
+},
+
+{
+    type: "mc",
+    text: "Qual é o ponto mais ao sul do continente africano?",
+    options: [
+        "Cabo das Agulhas, na África do Sul.",
+        "Cabo da Boa Esperança, também na África do Sul.",
+        "Cabo Verde, na costa ocidental.",
+        "Chifre da África, no nordeste.",
+        "Golfo da Guiné, na costa oeste."
+    ],
+    answer: 0,
+    explanation: "O Cabo das Agulhas, na África do Sul, é o ponto mais ao sul do continente africano."
+},
+
+/* ============================================================
+   QUESTÕES ADICIONAIS — UM POUCO MAIS COMPLEXAS
+============================================================ */
+
+{
+    type: "mc",
+    text: "O Vale do Rift, formado por um processo de separação de placas tectônicas, atravessa principalmente qual região da África?",
+    options: [
+        "A África Oriental, ao longo do Rift.",
+        "A África Ocidental, próxima à costa.",
+        "O Magreb, no noroeste do continente.",
+        "A África Meridional costeira, ao sul.",
+        "O Golfo da Guiné, na costa oeste."
+    ],
+    answer: 0,
+    explanation: "O Grande Vale do Rift corta a África Oriental, resultado do afastamento de placas tectônicas, e abriga vários lagos e vulcões."
+},
+
+{
+    type: "mc",
+    text: "Dentre os países africanos abaixo, qual NÃO possui litoral, sendo classificado como um país sem saída para o mar?",
+    options: [
+        "Chade, um país interior.",
+        "Nigéria, com litoral no Atlântico.",
+        "Marrocos, com litoral no Atlântico.",
+        "Quênia, com litoral no Índico.",
+        "Angola, com litoral no Atlântico."
+    ],
+    answer: 0,
+    explanation: "O Chade é um país interior (landlocked), cercado por outros países e sem acesso direto ao mar, diferente dos demais listados."
+},
+
+{
+    type: "mc",
+    text: "Madagascar, a maior ilha africana, está localizada em qual oceano e é separada do continente por qual canal?",
+    options: [
+        "Oceano Índico; Canal de Moçambique.",
+        "Oceano Atlântico; Estreito de Gibraltar.",
+        "Oceano Índico; Golfo de Áden.",
+        "Oceano Atlântico; Golfo da Guiné.",
+        "Mar Mediterrâneo; Canal de Suez."
+    ],
+    answer: 0,
+    explanation: "Madagascar fica no Oceano Índico e é separada do continente africano pelo Canal de Moçambique."
+},
+
+{
+    type: "mc",
+    text: "O Deserto do Saara e o Deserto do Kalahari têm em comum o fato de:",
+    options: [
+        "Serem grandes desertos africanos, situados ao norte e ao sul.",
+        "Estarem ambos localizados exclusivamente na África Oriental.",
+        "Formarem, juntos, uma única faixa desértica contínua.",
+        "Serem cortados igualmente pela Linha do Equador.",
+        "Terem sido formados apenas por atividade vulcânica recente."
+    ],
+    answer: 0,
+    explanation: "O Saara fica no norte da África e o Kalahari no sul (África Meridional); ambos são grandes desertos, mas não são contínuos nem estão na mesma região."
+},
+
+{
+    type: "mc",
+    text: "Por que o Sahel é considerado uma região de transição geográfica na África?",
+    options: [
+        "Porque liga o Saara árido, ao norte, às savanas úmidas, ao sul.",
+        "Porque separa a África Oriental da Ocidental por montanhas.",
+        "Porque é a fronteira exata entre o Atlântico e o Índico.",
+        "Porque concentra a maior parte das florestas tropicais.",
+        "Porque corresponde à divisa entre o Magreb e o Egito."
+    ],
+    answer: 0,
+    explanation: "O Sahel é uma faixa de transição climática e ambiental entre o Saara, mais árido, e as savanas subsaarianas, mais úmidas."
+},
+
+{
+    type: "mc",
+    text: "Qual característica diferencia principalmente a África Setentrional da África Subsaariana, além da localização geográfica?",
+    options: [
+        "A forte influência árabe e islâmica no norte, e maior diversidade ao sul.",
+        "A África Setentrional não ter contato com o Mediterrâneo.",
+        "A ausência total de desertos na África Subsaariana.",
+        "O uso exclusivo do inglês em toda a África Setentrional.",
+        "A inexistência de países costeiros na África Subsaariana."
+    ],
+    answer: 0,
+    explanation: "Além da separação física pelo Saara, a região norte tem forte influência árabe e islâmica, enquanto a África Subsaariana apresenta maior diversidade étnica, linguística e religiosa."
+},
+
+{
+    type: "mc",
+    text: "O Nilo, um dos rios mais importantes da África, deságua em qual mar, após atravessar principalmente qual região do continente?",
+    options: [
+        "Mar Mediterrâneo, após atravessar o nordeste da África.",
+        "Oceano Atlântico, após atravessar a África Central.",
+        "Mar Vermelho, após atravessar o Chifre da África.",
+        "Oceano Índico, após atravessar a África Oriental.",
+        "Golfo da Guiné, após atravessar a África Ocidental."
+    ],
+    answer: 0,
+    explanation: "O Rio Nilo percorre o nordeste da África, passando pelo Egito, e deságua no Mar Mediterrâneo."
+},
+
+{
+    type: "mc",
+    text: "Comparando o Canal de Suez e o Estreito de Gibraltar, é correto afirmar que:",
+    options: [
+        "Suez é artificial (Mediterrâneo-Mar Vermelho); Gibraltar é natural.",
+        "Ambos são canais artificiais construídos no século vinte.",
+        "O Estreito de Gibraltar liga o Oceano Índico ao Atlântico.",
+        "O Canal de Suez separa oficialmente a Europa da África.",
+        "Ambos estão localizados na costa oriental do continente."
+    ],
+    answer: 0,
+    explanation: "O Canal de Suez é uma via artificial (Mediterrâneo–Mar Vermelho), enquanto o Estreito de Gibraltar é uma passagem natural entre o Mediterrâneo e o Atlântico, separando África e Europa."
+}
+
+];
+
+
+/* ============================================================
+   EMBARALHAR QUESTÕES
+============================================================ */
+
+function shuffle(array) {
+
+    const arr = [...array];
+
+    for (let i = arr.length - 1; i > 0; i--) {
+
+        const j = Math.floor(Math.random() * (i + 1));
+
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+
+    return arr;
+}
+
+let gameQuestions = [];
+
+
+/* ============================================================
+   INICIAR JOGO
+============================================================ */
+
+function startGame() {
+
+    const nameInput =
+        document.getElementById("playerNameInput");
+
+    const typedName =
+        nameInput.value.trim();
+
+    if (!typedName) {
+
+        document.getElementById("playerNameBox")
+            .classList.add("error");
+
+        nameInput.focus();
+
+        return;
+    }
+
+    document.getElementById("playerNameBox")
+        .classList.remove("error");
+
+    playerName = typedName;
+
+    /* Desbloqueia o áudio a partir do gesto do usuário (clique) */
+    try { getAudioCtx(); } catch (e) {}
+
+    lives = TOTAL_LIVES;
+    score = 0;
+    currentQuestion = 0;
+
+    gameQuestions = shuffle(questions);
+
+    document.getElementById("startScreen")
+        .classList.add("hidden");
+
+    document.getElementById("finalScreen")
+        .classList.remove("show");
+
+    document.getElementById("gameScreen")
+        .classList.remove("hidden");
+
+    updateLives();
+
+    showQuestion();
+}
+
+
+/* ============================================================
+   ATUALIZAR VIDAS
+============================================================ */
+
+function updateLives() {
+
+    const element = document.getElementById("lives");
+
+    element.textContent =
+        "❤️".repeat(lives) +
+        "🖤".repeat(TOTAL_LIVES - lives);
+}
+
+
+/* ============================================================
+   MOSTRAR QUESTÃO
+============================================================ */
+
+function showQuestion() {
+
+    clearInterval(timerInterval);
+
+    answered = false;
+
+    const q = gameQuestions[currentQuestion];
+
+    document.getElementById("questionCounter").textContent =
+        `${currentQuestion + 1} / ${gameQuestions.length}`;
+
+    document.getElementById("questionNumber").textContent =
+        `QUESTÃO ${String(currentQuestion + 1).padStart(2, "0")}`;
+
+    document.getElementById("questionText").textContent =
+        q.text;
+
+    document.getElementById("feedback").className =
+        "feedback";
+
+    document.getElementById("feedback").textContent = "";
+
+    document.getElementById("questionPoints").className =
+        "question-points";
+
+    document.getElementById("questionPoints").textContent = "";
+
+    document.getElementById("nextButton").classList.remove("show");
+
+    const answers =
+        document.getElementById("answers");
+
+    answers.innerHTML = "";
+
+    const mapArea =
+        document.getElementById("mapArea");
+
+
+    /* =========================
+       QUESTÃO DE MAPA
+    ========================== */
+
+    if (q.type === "map") {
+
+        document.getElementById("questionType").textContent =
+            "🛰️ LOCALIZAÇÃO NO MAPA";
+
+        mapArea.classList.remove("hidden");
+
+        answers.innerHTML = "";
+
+        setTimeout(() => {
+
+            initializeMap();
+
+            map.invalidateSize();
+
+            resetMap();
+
+        }, 100);
+
+    }
+
+
+    /* =========================
+       MÚLTIPLA ESCOLHA
+    ========================== */
+
+    else {
+
+        document.getElementById("questionType").textContent =
+            "🔤 MÚLTIPLA ESCOLHA";
+
+        mapArea.classList.add("hidden");
+
+        createAnswers(q);
+
+    }
+
+
+    startTimer();
+
+}
+
+
+/* ============================================================
+   CRIAR ALTERNATIVAS
+============================================================ */
+
+function createAnswers(q) {
+
+    const letters = ["A", "B", "C", "D", "E"];
+
+    const container =
+        document.getElementById("answers");
+
+    /*
+        As alternativas são embaralhadas a cada exibição para que a
+        resposta correta não fique sempre na mesma posição (ex.: "A").
+        A posição embaralhada correta fica guardada em q._shuffledAnswer.
+    */
+
+    const order =
+        shuffle(q.options.map((_, i) => i));
+
+    q._displayOrder = order;
+
+    q._shuffledAnswer = order.indexOf(q.answer);
+
+    order.forEach((originalIndex, position) => {
+
+        const option = q.options[originalIndex];
+
+        const button =
+            document.createElement("button");
+
+        button.className = "answer";
+
+        button.innerHTML =
+            `<span class="letter">${letters[position]}</span>${option}`;
+
+        button.onclick = () =>
+            answerMultipleChoice(position);
+
+        container.appendChild(button);
+
+    });
+
+}
+
+
+/* ============================================================
+   TIMER
+============================================================ */
+
+function startTimer() {
+
+    questionStartTime = performance.now();
+
+    let timeLeft = QUESTION_TIME;
+
+    const timerElement =
+        document.getElementById("timer");
+
+    timerElement.textContent =
+        timeLeft;
+
+    document.getElementById("progressBar")
+        .style.width = "0%";
+
+
+    timerInterval = setInterval(() => {
+
+        const elapsed =
+            (performance.now() - questionStartTime) / 1000;
+
+        const remaining =
+            Math.max(0, QUESTION_TIME - elapsed);
+
+        timeLeft =
+            Math.ceil(remaining);
+
+        timerElement.textContent =
+            timeLeft;
+
+        const progress =
+            ((QUESTION_TIME - remaining) / QUESTION_TIME) * 100;
+
+        document.getElementById("progressBar")
+            .style.width = `${progress}%`;
+
+
+        if (remaining <= 0) {
+
+            clearInterval(timerInterval);
+
+            timeOut();
+
+        }
+
+    }, 100);
+
+}
+
+
+/* ============================================================
+   CALCULAR PONTUAÇÃO
+============================================================ */
+
+function calculatePoints() {
+
+    const elapsed =
+        (performance.now() - questionStartTime) / 1000;
+
+    const remaining =
+        Math.max(0, QUESTION_TIME - elapsed);
+
+    /*
+        300 pontos no instante inicial
+        0 pontos aos 60 segundos
+    */
+
+    const points =
+        Math.round(
+            (remaining / QUESTION_TIME) *
+            MAX_POINTS
+        );
+
+    return Math.max(
+        0,
+        Math.min(MAX_POINTS, points)
+    );
+
+}
+
+
+/* ============================================================
+   MULTIPLA ESCOLHA
+============================================================ */
+
+function answerMultipleChoice(selectedIndex) {
+
+    if (answered) return;
+
+    answered = true;
+
+    clearInterval(timerInterval);
+
+    const q = gameQuestions[currentQuestion];
+
+    const buttons =
+        document.querySelectorAll(".answer");
+
+    buttons.forEach(button => {
+
+        button.classList.add("disabled");
+
+    });
+
+
+    const points =
+        selectedIndex === q._shuffledAnswer
+            ? calculatePoints()
+            : 0;
+
+
+    if (selectedIndex === q._shuffledAnswer) {
+
+        buttons[selectedIndex]
+            .classList.add("correct");
+
+        score += points;
+
+        playVictorySound();
+
+        showFeedback(
+            true,
+            `Resposta correta! ${q.explanation}`
+        );
+
+    } else {
+
+        buttons[selectedIndex]
+            .classList.add("wrong");
+
+        buttons[q._shuffledAnswer]
+            .classList.add("correct");
+
+        lives--;
+
+        updateLives();
+
+        playWrongSound();
+
+        showFeedback(
+            false,
+            `Resposta incorreta. ${q.explanation}`
+        );
+
+        if (lives <= 0) {
+
+            setTimeout(offerLifePurchase, 1200);
+
+            return;
+        }
+
+    }
+
+
+    showPoints(points);
+
+    document.getElementById("score")
+        .textContent = score;
+
+    document.getElementById("nextButton")
+        .classList.add("show");
+
+}
+
+
+/* ============================================================
+   QUESTÕES DE MAPA
+============================================================ */
+
+function answerMap(target) {
+
+    if (answered) return;
+
+    answered = true;
+
+    clearInterval(timerInterval);
+
+    const q = gameQuestions[currentQuestion];
+
+    const correct =
+        target === q.target;
+
+    const points =
+        correct
+            ? calculatePoints()
+            : 0;
+
+
+    if (correct) {
+
+        score += points;
+
+        playVictorySound();
+
+        showFeedback(
+            true,
+            `Localização correta! ${q.explanation}`
+        );
+
+    } else {
+
+        lives--;
+
+        updateLives();
+
+        playWrongSound();
+
+        showFeedback(
+            false,
+            `Localização incorreta. ${q.explanation}`
+        );
+
+    }
+
+
+    showCorrectMapTarget(q.target);
+
+    showPoints(points);
+
+    document.getElementById("score")
+        .textContent = score;
+
+
+    if (lives <= 0) {
+
+        setTimeout(offerLifePurchase, 1400);
+
+        return;
+
+    }
+
+
+    document.getElementById("nextButton")
+        .classList.add("show");
+
+}
+
+
+/* ============================================================
+   FEEDBACK
+============================================================ */
+
+function showFeedback(correct, text) {
+
+    const feedback =
+        document.getElementById("feedback");
+
+    feedback.textContent = text;
+
+    feedback.className =
+        "feedback show " +
+        (correct
+            ? "correct-feedback"
+            : "wrong-feedback");
+
+}
+
+
+/* ============================================================
+   PONTUAÇÃO DA QUESTÃO
+============================================================ */
+
+function showPoints(points) {
+
+    const element =
+        document.getElementById("questionPoints");
+
+    element.textContent =
+        `🎯 Pontuação da questão: +${points} / 300`;
+
+    element.classList.add("show");
+
+}
+
+
+/* ============================================================
+   TIMEOUT
+============================================================ */
+
+function timeOut() {
+
+    if (answered) return;
+
+    answered = true;
+
+    const q = gameQuestions[currentQuestion];
+
+    lives--;
+
+    updateLives();
+
+    playWrongSound();
+
+    showFeedback(
+        false,
+        `⏰ Tempo esgotado! ${q.explanation}`
+    );
+
+    showPoints(0);
+
+    if (q.type === "map") {
+
+        showCorrectMapTarget(q.target);
+
+    } else {
+
+        const buttons =
+            document.querySelectorAll(".answer");
+
+        buttons.forEach(button => {
+
+            button.classList.add("disabled");
+
+        });
+
+        buttons[q._shuffledAnswer]
+            .classList.add("correct");
+
+    }
+
+
+    if (lives <= 0) {
+
+        setTimeout(offerLifePurchase, 1500);
+
+        return;
+
+    }
+
+
+    document.getElementById("nextButton")
+        .classList.add("show");
+
+}
+
+
+/* ============================================================
+   PRÓXIMA QUESTÃO
+============================================================ */
+
+function nextQuestion() {
+
+    currentQuestion++;
+
+    if (currentQuestion >= gameQuestions.length) {
+
+        endGame();
+
+        return;
+
+    }
+
+    showQuestion();
+
+}
+
+
+/* ============================================================
+   MAPA
+============================================================ */
+
+function initializeMap() {
+
+    if (map) return;
+
+    map = L.map("map", {
+
+        zoomControl: true,
+
+        /*
+            ESSENCIAL:
+            o scroll do mouse não controla o zoom
+            do mapa, permitindo rolar a página.
+        */
+
+        scrollWheelZoom: false,
+
+        doubleClickZoom: true,
+
+        dragging: true,
+
+        touchZoom: true,
+
+        minZoom: 2,
+
+        maxZoom: 8
+
+    });
+
+
+    /* ========================================================
+       IMAGEM DE SATÉLITE
+    ======================================================== */
+
+    L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        {
+            maxZoom: 19,
+            attribution:
+                "Tiles © Esri"
+        }
+    ).addTo(map);
+
+
+    /*
+        NÃO adicionamos a camada "World Boundaries and Places",
+        pois ela poderia colocar nomes de países/cidades
+        no mapa e facilitar a resposta.
+    */
+
+
+    createMapTargets();
+
+}
+
+
+/* ============================================================
+   ALVOS GEOGRÁFICOS
+============================================================ */
+
+const geoTargets = {
+
+    atlantic: {
+        type: "polygon",
+        coords: [
+            [37, -6],
+            [30, -10],
+            [21, -17],
+            [10, -17],
+            [5, -8],
+            [0, 8],
+            [-10, 12],
+            [-20, 13],
+            [-30, 17],
+            [-37, 18],
+            [-37, -35],
+            [37, -35]
+        ]
+    },
+
+    indian: {
+        type: "polygon",
+        coords: [
+            [30, 42],
+            [30, 65],
+            [-37, 65],
+            [-37, 30],
+            [-20, 30],
+            [-5, 35],
+            [10, 38]
+        ]
+    },
+
+    mediterranean: {
+        type: "polygon",
+        coords: [
+            [37, -10],
+            [37, 36],
+            [31, 36],
+            [31, 30],
+            [32, 20],
+            [32, 10],
+            [31, 0],
+            [30, -10]
+        ]
+    },
+
+    redsea: {
+        type: "polygon",
+        coords: [
+            [29, 32],
+            [29, 44],
+            [10, 44],
+            [10, 40],
+            [18, 38],
+            [24, 36]
+        ]
+    },
+
+    gibraltar: {
+        type: "circle",
+        coords: [36.14, -5.35],
+        radius: 80000
+    },
+
+    suez: {
+        type: "circle",
+        coords: [30.58, 32.30],
+        radius: 60000
+    },
+
+    aden: {
+        type: "polygon",
+        coords: [
+            [16, 41],
+            [16, 53],
+            [7, 53],
+            [7, 41]
+        ]
+    },
+
+    horn: {
+        type: "polygon",
+        coords: [
+            [15, 40],
+            [15, 52],
+            [5, 52],
+            [-2, 49],
+            [5, 43]
+        ]
+    },
+
+    guinea: {
+        type: "polygon",
+        coords: [
+            [8, -15],
+            [8, 12],
+            [-5, 12],
+            [-8, 0],
+            [-5, -10]
+        ]
+    },
+
+    mozambique: {
+        type: "polygon",
+        coords: [
+            [-10, 39],
+            [-10, 50],
+            [-27, 50],
+            [-27, 39]
+        ]
+    },
+
+    goodhope: {
+        type: "circle",
+        coords: [-34.35, 18.47],
+        radius: 100000
+    },
+
+    agulhas: {
+        type: "circle",
+        coords: [-34.83, 20.00],
+        radius: 300000
+    },
+
+    maghreb: {
+        type: "polygon",
+        coords: [
+            [37, -10],
+            [37, 12],
+            [27, 12],
+            [20, 5],
+            [25, -10]
+        ]
+    },
+
+    mashreq: {
+        type: "polygon",
+        coords: [
+            [32, 25],
+            [32, 37],
+            [21, 37],
+            [21, 25]
+        ]
+    },
+
+    sahel: {
+        type: "polygon",
+        coords: [
+            [20, -17],
+            [20, 35],
+            [10, 35],
+            [10, -17]
+        ]
+    }
+
+};
+
+
+/* ============================================================
+   CRIAR HOTSPOTS
+============================================================ */
+
+function createMapTargets() {
+
+    hotspotLayers = [];
+
+    Object.keys(geoTargets).forEach(key => {
+
+        const target =
+            geoTargets[key];
+
+        let layer;
+
+
+        if (target.type === "circle") {
+
+            layer = L.circle(
+                target.coords,
+                {
+                    radius: target.radius,
+                    fillColor: "#ffffff",
+                    fillOpacity: 0.001,
+                    color: "#ffffff",
+                    opacity: 0.001,
+                    weight: 1,
+                    interactive: true
+                }
+            );
+
+        } else {
+
+            layer = L.polygon(
+                target.coords,
+                {
+                    fillColor: "#ffffff",
+                    fillOpacity: 0.001,
+                    color: "#ffffff",
+                    opacity: 0.001,
+                    weight: 1,
+                    interactive: true
+                }
+            );
+
+        }
+
+
+        layer.on("click", function(e) {
+
+            L.DomEvent.stopPropagation(e);
+
+            answerMap(key);
+
+        });
+
+
+        layer.addTo(map);
+
+        hotspotLayers.push({
+            key: key,
+            layer: layer
+        });
+
+    });
+
+}
+
+
+/* ============================================================
+   RESETAR MAPA
+============================================================ */
+
+function resetMap() {
+
+    hotspotLayers.forEach(item => {
+
+        item.layer.setStyle({
+
+            fillOpacity: 0.001,
+
+            opacity: 0.001
+
+        });
+
+    });
+
+
+    map.setView(
+        [2, 17],
+        3
+    );
+
+}
+
+
+/* ============================================================
+   MOSTRAR RESPOSTA CORRETA NO MAPA
+============================================================ */
+
+function showCorrectMapTarget(targetKey) {
+
+    const item =
+        hotspotLayers.find(
+            x => x.key === targetKey
+        );
+
+    if (!item) return;
+
+
+    item.layer.setStyle({
+
+        fillColor: "#f4c542",
+
+        fillOpacity: 0.35,
+
+        color: "#ffe889",
+
+        opacity: 1,
+
+        weight: 3
+
+    });
+
+
+    /*
+        Centraliza a câmera na resposta correta
+        somente depois da resposta.
+    */
+
+    try {
+
+        map.fitBounds(
+            item.layer.getBounds
+                ? item.layer.getBounds()
+                : L.latLngBounds(
+                    item.layer.getLatLng(),
+                    item.layer.getLatLng()
+                ),
+            {
+                padding: [40, 40],
+                maxZoom: 6
+            }
+        );
+
+    } catch(e) {
+
+        /* Mantém o mapa funcionando mesmo em alvos pontuais */
+
+    }
+
+}
+
+
+/* ============================================================
+   COMPRA DE VIDAS
+============================================================ */
+
+const LIFE_COST_ONE = 3000;
+
+const LIFE_COST_TWO = 4000;
+
+function offerLifePurchase() {
+
+    document.getElementById("modalScoreDisplay")
+        .textContent = score;
+
+    const oneBtn =
+        document.getElementById("buyOneLifeBtn");
+
+    const twoBtn =
+        document.getElementById("buyTwoLivesBtn");
+
+    oneBtn.disabled = score < LIFE_COST_ONE;
+
+    twoBtn.disabled = score < LIFE_COST_TWO;
+
+    document.getElementById("lifePurchaseOverlay")
+        .classList.remove("hidden");
+
+}
+
+function buyLives(amount) {
+
+    const cost =
+        amount === 2
+            ? LIFE_COST_TWO
+            : LIFE_COST_ONE;
+
+    if (score < cost) return;
+
+    score -= cost;
+
+    lives = amount;
+
+    updateLives();
+
+    document.getElementById("score")
+        .textContent = score;
+
+    document.getElementById("lifePurchaseOverlay")
+        .classList.add("hidden");
+
+    document.getElementById("nextButton")
+        .classList.add("show");
+
+}
+
+function declineLifePurchase() {
+
+    document.getElementById("lifePurchaseOverlay")
+        .classList.add("hidden");
+
+    endGame();
+
+}
+
+
+/* ============================================================
+   FINAL DO JOGO
+============================================================ */
+
+function endGame() {
+
+    clearInterval(timerInterval);
+
+    document.getElementById("gameScreen")
+        .classList.add("hidden");
+
+    document.getElementById("finalScreen")
+        .classList.add("show");
+
+    document.getElementById("finalScore")
+        .textContent = score;
+
+    document.getElementById("finalPlayerName")
+        .textContent = playerName
+            ? `Jogador(a): ${playerName}`
+            : "";
+
+
+    const maxScore =
+        gameQuestions.length * MAX_POINTS;
+
+
+    const percentage =
+        (score / maxScore) * 100;
+
+
+    let message = "";
+
+
+    if (percentage >= 90) {
+
+        message =
+            "🌟 Excelente! Você demonstrou domínio dos principais aspectos da geografia africana.";
+
+    } else if (percentage >= 75) {
+
+        message =
+            "👏 Muito bom! Seu conhecimento sobre a África está bastante sólido.";
+
+    } else if (percentage >= 60) {
+
+        message =
+            "👍 Bom desempenho! Você já domina vários conceitos, mas ainda pode aprofundar alguns temas.";
+
+    } else if (percentage >= 40) {
+
+        message =
+            "📚 Você está no caminho certo. Revise a regionalização e os principais elementos físicos da África.";
+
+    } else {
+
+        message =
+            "🌍 Que tal revisar o conteúdo e tentar novamente? A África tem muito mais para descobrir.";
+
+    }
+
+
+    document.getElementById("finalMessage")
+        .innerHTML =
+        `${message}<br><br>
+         <strong>${score}</strong> pontos de
+         <strong>${maxScore}</strong> possíveis.`;
+
+
+    saveRanking(score);
+
+    showRanking();
+
+}
+
+
+/* ============================================================
+   RANKING
+============================================================ */
+
+function saveRanking(points) {
+
+    let ranking =
+        JSON.parse(
+            localStorage.getItem("geoAfricaRanking") || "[]"
+        );
+
+
+    ranking.push({
+
+        name: playerName || "Jogador(a)",
+
+        score: points,
+
+        date: new Date().toLocaleDateString("pt-BR")
+
+    });
+
+
+    ranking.sort(
+        (a,b) => b.score - a.score
+    );
+
+
+    ranking =
+        ranking.slice(0, 10);
+
+
+    localStorage.setItem(
+        "geoAfricaRanking",
+        JSON.stringify(ranking)
+    );
+
+}
+
+
+function showRanking() {
+
+    const list =
+        document.getElementById("rankingList");
+
+    const ranking =
+        JSON.parse(
+            localStorage.getItem("geoAfricaRanking") || "[]"
+        );
+
+
+    list.innerHTML = "";
+
+
+    ranking.forEach((item, index) => {
+
+        const li =
+            document.createElement("li");
+
+        li.innerHTML =
+            `<strong>${item.name || "Jogador(a)"}</strong> —
+             <strong>${item.score}</strong> pontos
+             (${item.date})`;
+
+        list.appendChild(li);
+
+    });
+
+}
+
+
+/* ============================================================
+   REINICIAR
+============================================================ */
+
+function restartGame() {
+
+    document.getElementById("finalScreen")
+        .classList.remove("show");
+
+    document.getElementById("startScreen")
+        .classList.remove("hidden");
+
+    document.getElementById("gameScreen")
+        .classList.add("hidden");
+
+    document.getElementById("lifePurchaseOverlay")
+        .classList.add("hidden");
+
+    document.getElementById("playerNameBox")
+        .classList.remove("error");
+
+    lives = TOTAL_LIVES;
+
+    score = 0;
+
+    currentQuestion = 0;
+
+    clearInterval(timerInterval);
+
+}
+
+</script>
+
+</body>
+</html>
